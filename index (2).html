@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Petrol Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2a2a2a;
+    --border2: #333333;
+    --text: #f0f0f0;
+    --muted: #666;
+    --subtle: #444;
+    --accent: #e8ff47;
+    --accent-dim: rgba(232,255,71,0.08);
+    --accent-dim2: rgba(232,255,71,0.15);
+    --danger: #ff4f4f;
+    --danger-dim: rgba(255,79,79,0.1);
+    --warning: #ffaa33;
+    --warning-dim: rgba(255,170,51,0.1);
+    --success: #4fffb0;
+    --success-dim: rgba(79,255,176,0.08);
+    --font: 'Inter', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+  .header h1 { font-size: 15px; font-weight: 500; letter-spacing: 0.02em; color: var(--text); }
+  .header-month { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  /* ── MAIN LAYOUT ── */
+  .main { max-width: 1100px; margin: 0 auto; padding: 32px 32px 80px; }
+
+  /* ── BUDGET BAR ── */
+  .budget-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    margin-bottom: 28px;
+  }
+  .budget-top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
+  .budget-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .budget-amount { font-family: var(--mono); font-size: 38px; font-weight: 600; line-height: 1; }
+  .budget-amount .rupee { font-size: 18px; color: var(--muted); }
+  .budget-remaining { text-align: right; }
+  .budget-remaining .budget-label { text-align: right; }
+  .budget-remaining .rem-value { font-family: var(--mono); font-size: 22px; font-weight: 600; }
+  .budget-remaining .rem-km { font-size: 12px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+
+  .progress-track { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.4s ease; }
+  .progress-fill.warn { background: var(--warning); }
+  .progress-fill.danger { background: var(--danger); }
+  .progress-meta { display: flex; justify-content: space-between; margin-top: 8px; }
+  .progress-meta span { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+  /* ── STATS ROW ── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .stat-value { font-family: var(--mono); font-size: 22px; font-weight: 600; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.success { color: var(--success); }
+  .stat-value.warning { color: var(--warning); }
+  .stat-value.danger { color: var(--danger); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+
+  /* ── TWO-COL LAYOUT ── */
+  .two-col { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+
+  /* ── LOG FORM ── */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+  }
+  .form-title { font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; }
+
+  .trip-type-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+  .type-btn {
+    padding: 12px 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .type-btn .type-icon { font-size: 20px; margin-bottom: 4px; display: block; }
+  .type-btn .type-name { font-weight: 500; display: block; color: var(--text); font-size: 12px; }
+  .type-btn .type-km { font-size: 11px; color: var(--muted); display: block; font-family: var(--mono); margin-top: 2px; }
+  .type-btn:hover { border-color: var(--subtle); }
+  .type-btn.active { border-color: var(--accent); background: var(--accent-dim2); color: var(--accent); }
+  .type-btn.active .type-name { color: var(--accent); }
+  .type-btn.active .type-km { color: var(--accent); opacity: 0.7; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .form-group input, .form-group textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: none; font-family: var(--font); font-size: 13px; height: 60px; }
+  .form-group input::placeholder, .form-group textarea::placeholder { color: var(--subtle); }
+
+  .cost-preview {
+    background: var(--accent-dim);
+    border: 1px solid rgba(232,255,71,0.2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cost-preview-label { font-size: 12px; color: var(--muted); }
+  .cost-preview-value { font-family: var(--mono); font-size: 18px; font-weight: 600; color: var(--accent); }
+
+  .log-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: var(--radius);
+    border: none;
+    background: var(--accent);
+    color: #0f0f0f;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: opacity 0.15s;
+  }
+  .log-btn:hover { opacity: 0.88; }
+  .log-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .round-trip-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; margin-bottom: 16px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius); cursor: pointer; transition: border-color 0.15s;
+  }
+  .round-trip-row:hover { border-color: var(--subtle); }
+  .round-trip-row.active { border-color: var(--accent); background: var(--accent-dim); }
+  .rt-left { display: flex; align-items: center; gap: 10px; }
+  .rt-label { font-size: 13px; color: var(--text); }
+  .rt-sub { font-size: 11px; color: var(--muted); }
+  .rt-toggle {
+    width: 40px; height: 22px; border-radius: 11px;
+    background: var(--border2); position: relative; transition: background 0.2s;
+  }
+  .rt-toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--muted); transition: all 0.2s;
+  }
+  .round-trip-row.active .rt-toggle { background: var(--accent); }
+  .round-trip-row.active .rt-toggle::after { left: 21px; background: #0f0f0f; }
+  .round-trip-row.active .rt-label { color: var(--accent); }
+
+  /* ── TRIP LOG ── */
+  .log-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .log-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .log-header-title { font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .clear-btn {
+    font-size: 12px; color: var(--muted); background: none; border: none;
+    cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: color 0.15s;
+  }
+  .clear-btn:hover { color: var(--danger); }
+
+  .log-filters { display: flex; gap: 8px; padding: 12px 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .filter-btn {
+    padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border2); background: none; color: var(--muted); transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--subtle); color: var(--text); }
+  .filter-btn.active { background: var(--surface2); color: var(--text); border-color: var(--subtle); }
+
+  .log-list { overflow-y: auto; max-height: 460px; }
+  .log-empty { padding: 48px 24px; text-align: center; color: var(--muted); font-size: 14px; }
+  .log-empty p { margin-top: 8px; font-size: 12px; }
+
+  .trip-row {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: background 0.1s;
+  }
+  .trip-row:hover { background: var(--surface2); }
+  .trip-row:last-child { border-bottom: none; }
+
+  .trip-badge {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .trip-badge.long { background: rgba(232,255,71,0.1); }
+  .trip-badge.small { background: rgba(79,255,176,0.08); }
+  .trip-badge.micro { background: rgba(255,170,51,0.08); }
+
+  .trip-info { flex: 1; min-width: 0; }
+  .trip-info-top { display: flex; align-items: center; gap: 8px; }
+  .trip-type-label { font-size: 13px; font-weight: 500; }
+  .trip-type-label.long { color: var(--accent); }
+  .trip-type-label.small { color: var(--success); }
+  .trip-type-label.micro { color: var(--warning); }
+  .trip-date { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .trip-note { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+
+  .trip-nums { text-align: right; flex-shrink: 0; }
+  .trip-cost { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+  .trip-km { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .trip-delete {
+    background: none; border: none; color: var(--subtle); cursor: pointer;
+    font-size: 16px; padding: 4px; border-radius: 6px; transition: color 0.15s; flex-shrink: 0;
+  }
+  .trip-delete:hover { color: var(--danger); }
+
+  /* ── BREAKDOWN SECTION ── */
+  .breakdown { margin-top: 20px; }
+  .breakdown-title { font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .breakdown-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .breakdown-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .bc-icon { font-size: 18px; margin-bottom: 8px; }
+  .bc-type { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .bc-count { font-family: var(--mono); font-size: 20px; font-weight: 600; }
+  .bc-cost { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .bc-km { font-family: var(--mono); font-size: 11px; color: var(--subtle); margin-top: 2px; }
+
+  /* ── MILEAGE SETTING ── */
+  .mileage-wrap { display: flex; align-items: center; gap: 16px; }
+  .mileage-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px;
+    background: var(--surface); border: 1px solid var(--border2);
+    color: var(--muted); font-size: 12px; font-family: var(--mono);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .mileage-btn:hover { border-color: var(--subtle); color: var(--text); }
+  .mileage-edit {
+    display: none; align-items: center; gap: 8px;
+    padding: 4px 10px; border-radius: 20px;
+    background: var(--surface); border: 1px solid var(--accent);
+  }
+  .mileage-edit.active { display: flex; }
+  .mileage-edit input {
+    width: 48px; background: none; border: none; outline: none;
+    color: var(--accent); font-family: var(--mono); font-size: 13px;
+    font-weight: 600; text-align: center;
+  }
+  .mileage-edit span { font-size: 11px; color: var(--muted); }
+  .mileage-save {
+    background: var(--accent); color: #0f0f0f; border: none;
+    padding: 2px 8px; border-radius: 4px; font-size: 11px;
+    font-weight: 600; cursor: pointer;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 12px 18px;
+    font-size: 13px; color: var(--text);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 999;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--success); color: var(--success); }
+  .toast.danger { border-color: var(--danger); color: var(--danger); }
+
+  @media (max-width: 900px) {
+    .two-col { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 20px 16px 60px; }
+    .header { padding: 16px 20px; }
+  }
+
+  /* ── PAGE TABS ── */
+  .page-tabs {
+    display: flex; gap: 0; margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-tab {
+    padding: 10px 20px; font-size: 13px; font-weight: 500;
+    color: var(--muted); background: none; border: none;
+    cursor: pointer; position: relative; transition: color 0.15s;
+    font-family: var(--font);
+  }
+  .page-tab:hover { color: var(--text); }
+  .page-tab.active { color: var(--accent); }
+  .page-tab.active::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 2px; background: var(--accent);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── MONTHLY LOGS ── */
+  .month-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden;
+  }
+  .month-header {
+    padding: 18px 24px; display: flex; align-items: center;
+    justify-content: space-between; cursor: pointer; transition: background 0.15s;
+  }
+  .month-header:hover { background: var(--surface2); }
+  .month-name { font-size: 16px; font-weight: 500; }
+  .month-summary { display: flex; gap: 20px; align-items: center; }
+  .month-stat { text-align: right; }
+  .month-stat-val { font-family: var(--mono); font-size: 16px; font-weight: 600; }
+  .month-stat-label { font-size: 11px; color: var(--muted); }
+  .month-chevron { color: var(--muted); font-size: 18px; transition: transform 0.2s; }
+  .month-card.open .month-chevron { transform: rotate(180deg); }
+  .month-body { display: none; border-top: 1px solid var(--border); }
+  .month-card.open .month-body { display: block; }
+
+  .month-breakdown {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0; border-bottom: 1px solid var(--border);
+  }
+  .mb-cell { padding: 14px 20px; text-align: center; }
+  .mb-cell:not(:last-child) { border-right: 1px solid var(--border); }
+  .mb-cell-icon { font-size: 16px; }
+  .mb-cell-type { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .mb-cell-count { font-family: var(--mono); font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .mb-cell-cost { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .mb-cell-km { font-family: var(--mono); font-size: 10px; color: var(--subtle); margin-top: 1px; }
+
+  .month-trips { max-height: 300px; overflow-y: auto; }
+  .month-trip-row {
+    padding: 10px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; font-size: 13px;
+  }
+  .month-trip-row:last-child { border-bottom: none; }
+  .mt-emoji { font-size: 16px; flex-shrink: 0; }
+  .mt-info { flex: 1; min-width: 0; }
+  .mt-type { font-weight: 500; }
+  .mt-type.long { color: var(--accent); }
+  .mt-type.small { color: var(--success); }
+  .mt-type.micro { color: var(--warning); }
+  .mt-date { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .mt-note { font-size: 11px; color: var(--subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+  .mt-cost { font-family: var(--mono); font-weight: 600; text-align: right; flex-shrink: 0; }
+  .mt-km { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: right; flex-shrink: 0; }
+
+  .month-pct-bar { height: 4px; background: var(--border); margin: 0 24px 14px; border-radius: 2px; overflow: hidden; }
+  .month-pct-fill { height: 100%; border-radius: 2px; }
+
+  .no-history { padding: 48px 24px; text-align: center; color: var(--muted); font-size: 14px; }
+  .no-history p { margin-top: 8px; font-size: 12px; }
+
+  /* ── CARRY-FORWARD BADGE ── */
+  .month-saved {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px; margin-top: 4px;
+  }
+  .month-saved.positive { background: rgba(79,255,176,0.08); color: var(--success); }
+  .month-saved.negative { background: rgba(255,79,79,0.1); color: var(--danger); }
+
+  /* ── FUEL TRACKER ── */
+  .fuel-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+  .fuel-hint { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+
+  .mileage-result {
+    margin-top: 16px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; text-align: center;
+  }
+  .mr-header { margin-bottom: 16px; }
+  .mr-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .mr-value { font-family: var(--mono); font-size: 36px; font-weight: 600; color: var(--accent); }
+  .mr-sub { font-size: 12px; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+  .use-btn {
+    padding: 10px 28px; border-radius: var(--radius);
+    border: 2px solid var(--accent); background: none;
+    color: var(--accent); font-family: var(--font); font-size: 14px;
+    font-weight: 600; cursor: pointer; transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .use-btn:hover { background: var(--accent); color: #0f0f0f; }
+  .mr-note { font-size: 11px; color: var(--subtle); margin-top: 10px; }
+
+  .fill-row {
+    padding: 14px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .fill-row:last-child { border-bottom: none; }
+  .fill-row:hover { background: var(--surface2); }
+  .fill-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--surface2); border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-family: var(--mono); color: var(--muted); flex-shrink: 0;
+  }
+  .fill-info { flex: 1; }
+  .fill-odo { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+  .fill-date { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+  .fill-stats { text-align: right; flex-shrink: 0; }
+  .fill-litres { font-family: var(--mono); font-size: 13px; }
+  .fill-amount { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .fill-mileage {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px; margin-left: 12px; flex-shrink: 0;
+    min-width: 70px; text-align: center;
+  }
+  .fill-mileage.good { background: rgba(79,255,176,0.08); color: var(--success); }
+  .fill-mileage.ok { background: rgba(255,170,51,0.1); color: var(--warning); }
+  .fill-mileage.bad { background: rgba(255,79,79,0.1); color: var(--danger); }
+  .fill-mileage.na { background: rgba(255,255,255,0.05); color: var(--subtle); }
+  .fill-delete {
+    background: none; border: none; color: var(--subtle); cursor: pointer;
+    font-size: 16px; padding: 4px; border-radius: 6px; transition: color 0.15s; flex-shrink: 0;
+  }
+  .fill-delete:hover { color: var(--danger); }
+
+  @media (max-width: 900px) {
+    .fuel-layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-dot"></div>
+    <h1>Petrol Tracker</h1>
+  </div>
+  <div class="header-month" id="headerMonth"></div>
+  <div class="mileage-wrap">
+    <button class="mileage-btn" id="mileageBtn" onclick="showMileageEdit()">
+      ⛽ <span id="mileageDisplay">8</span> kmpl
+    </button>
+    <div class="mileage-edit" id="mileageEdit">
+      <input type="number" id="mileageInput" value="8" min="1" max="50" step="0.1" />
+      <span>kmpl</span>
+      <button class="mileage-save" onclick="saveMileage()">Set</button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="page-tabs">
+    <button class="page-tab active" onclick="switchTab('current', this)">This month</button>
+    <button class="page-tab" onclick="switchTab('history', this)">Monthly logs</button>
+    <button class="page-tab" onclick="switchTab('fuel', this)">Fuel tracker</button>
+  </div>
+
+  <div id="tab-current" class="tab-panel active">
+
+  <!-- BUDGET BAR -->
+  <div class="budget-bar">
+    <div class="budget-top">
+      <div>
+        <div class="budget-label">Spent this month</div>
+        <div class="budget-amount"><span class="rupee">₹</span><span id="spent">0</span></div>
+      </div>
+      <div class="budget-remaining">
+        <div class="budget-label">Remaining</div>
+        <div class="rem-value" id="remaining">₹5,000</div>
+        <div class="rem-km" id="remainingKm">≈ 400 km left</div>
+      </div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    <div class="progress-meta">
+      <span id="progressPct">0% used</span>
+      <span>Budget: ₹5,000</span>
+    </div>
+  </div>
+
+  <!-- STATS ROW -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total trips</div>
+      <div class="stat-value accent" id="statTrips">0</div>
+      <div class="stat-sub">this month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">KM driven</div>
+      <div class="stat-value success" id="statKm">0</div>
+      <div class="stat-sub">of ~400 km</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Litres used</div>
+      <div class="stat-value warning" id="statLitres">0</div>
+      <div class="stat-sub">@ 8 kmpl</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg trip cost</div>
+      <div class="stat-value" id="statAvg">₹0</div>
+      <div class="stat-sub">per trip</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+
+    <!-- FORM -->
+    <div>
+      <div class="form-card">
+        <div class="form-title">Log a trip</div>
+
+        <div class="trip-type-row">
+          <button class="type-btn" data-type="long" onclick="selectType('long')">
+            <span class="type-icon">🛣️</span>
+            <span class="type-name">Long</span>
+            <span class="type-km">~30 km</span>
+          </button>
+          <button class="type-btn" data-type="small" onclick="selectType('small')">
+            <span class="type-icon">🏘️</span>
+            <span class="type-name">Small</span>
+            <span class="type-km">~10 km</span>
+          </button>
+          <button class="type-btn" data-type="micro" onclick="selectType('micro')">
+            <span class="type-icon">🛵</span>
+            <span class="type-name">Micro</span>
+            <span class="type-km">~3 km</span>
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label>Actual km driven (one way)</label>
+          <input type="number" id="kmInput" placeholder="e.g. 12" min="0" step="0.1" oninput="updatePreview()" />
+        </div>
+
+        <div class="round-trip-row" id="rtToggle" onclick="toggleRoundTrip()">
+          <div class="rt-left">
+            <span class="rt-label">Round trip</span>
+            <span class="rt-sub">Distance doubles</span>
+          </div>
+          <div class="rt-toggle"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Note (optional)</label>
+          <textarea id="noteInput" placeholder="e.g. To market, drop at station…"></textarea>
+        </div>
+
+        <div class="cost-preview" id="costPreview">
+          <span class="cost-preview-label">Estimated cost</span>
+          <span class="cost-preview-value" id="previewCost">₹ —</span>
+        </div>
+
+        <button class="log-btn" id="logBtn" onclick="logTrip()" disabled>Select trip type to log</button>
+      </div>
+
+      <!-- BREAKDOWN -->
+      <div class="breakdown" style="margin-top: 16px;">
+        <div class="breakdown-title">By trip type</div>
+        <div class="breakdown-row">
+          <div class="breakdown-card">
+            <div class="bc-icon">🛣️</div>
+            <div class="bc-type">Long trips</div>
+            <div class="bc-count accent" id="bcLongCount">0</div>
+            <div class="bc-cost" id="bcLongCost">₹0</div>
+            <div class="bc-km" id="bcLongKm">0 km</div>
+          </div>
+          <div class="breakdown-card">
+            <div class="bc-icon">🏘️</div>
+            <div class="bc-type">Small trips</div>
+            <div class="bc-count" style="color:var(--success)" id="bcSmallCount">0</div>
+            <div class="bc-cost" id="bcSmallCost">₹0</div>
+            <div class="bc-km" id="bcSmallKm">0 km</div>
+          </div>
+          <div class="breakdown-card">
+            <div class="bc-icon">🛵</div>
+            <div class="bc-type">Micro trips</div>
+            <div class="bc-count" style="color:var(--warning)" id="bcMicroCount">0</div>
+            <div class="bc-cost" id="bcMicroCost">₹0</div>
+            <div class="bc-km" id="bcMicroKm">0 km</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIP LOG -->
+    <div class="log-card">
+      <div class="log-header">
+        <span class="log-header-title">Trip log</span>
+        <button class="clear-btn" onclick="clearAll()">Clear all</button>
+      </div>
+      <div class="log-filters">
+        <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-btn" onclick="setFilter('long', this)">🛣️ Long</button>
+        <button class="filter-btn" onclick="setFilter('small', this)">🏘️ Small</button>
+        <button class="filter-btn" onclick="setFilter('micro', this)">🛵 Micro</button>
+      </div>
+      <div class="log-list" id="logList">
+        <div class="log-empty">
+          <div style="font-size:28px">⛽</div>
+          <p>No trips logged yet.<br>Add your first trip on the left.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  </div><!-- end tab-current -->
+
+  <div id="tab-history" class="tab-panel">
+    <div id="monthlyLogs"></div>
+  </div>
+
+  <div id="tab-fuel" class="tab-panel">
+    <div class="fuel-layout">
+      <div>
+        <div class="form-card">
+          <div class="form-title">Log a fill-up</div>
+          <div class="fuel-hint">Record each time you fill petrol. Needs at least 2 fill-ups to calculate your real mileage.</div>
+          <div class="form-group">
+            <label>Odometer reading (km)</label>
+            <input type="number" id="odoInput" placeholder="e.g. 45230" min="0" step="1" />
+          </div>
+          <div class="form-group">
+            <label>Litres filled</label>
+            <input type="number" id="litresInput" placeholder="e.g. 25" min="0" step="0.1" />
+          </div>
+          <div class="form-group">
+            <label>Amount paid (₹)</label>
+            <input type="number" id="amountInput" placeholder="e.g. 2500" min="0" step="1" />
+          </div>
+          <button class="log-btn" onclick="logFillUp()">Log fill-up</button>
+        </div>
+
+        <!-- CALCULATED MILEAGE -->
+        <div class="mileage-result" id="mileageResult" style="display:none">
+          <div class="mr-header">
+            <div class="mr-label">Calculated mileage</div>
+            <div class="mr-value" id="calcMileage">—</div>
+            <div class="mr-sub" id="calcMileageSub"></div>
+          </div>
+          <button class="use-btn" onclick="useCalculatedMileage()">Use this mileage</button>
+          <div class="mr-note">Replaces the current <span id="currentMileageRef"></span> kmpl setting</div>
+        </div>
+      </div>
+
+      <!-- FILL-UP LOG -->
+      <div class="log-card">
+        <div class="log-header">
+          <span class="log-header-title">Fill-up history</span>
+          <button class="clear-btn" onclick="clearFillUps()">Clear all</button>
+        </div>
+        <div id="fillUpList" class="log-list">
+          <div class="log-empty">
+            <div style="font-size:28px">⛽</div>
+            <p>No fill-ups logged yet.<br>Log your first fill-up to start tracking real mileage.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const BUDGET = 5000;
+  const RATE = 100;   // ₹ per litre
+  let MILEAGE = parseFloat(localStorage.getItem('petrol_mileage')) || 8;
+
+  let allTrips = JSON.parse(localStorage.getItem('petrol_trips') || '[]');
+  let selectedType = null;
+  let activeFilter = 'all';
+
+  const typeDefaults = { long: 30, small: 10, micro: 3 };
+  const typeEmoji    = { long: '🛣️', small: '🏘️', micro: '🛵' };
+  let isRoundTrip = false;
+
+  // sanitize user input before injecting into HTML
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // filter trips to current month only
+  function getCurrentMonthTrips() {
+    const now = new Date();
+    const m = now.getMonth();
+    const y = now.getFullYear();
+    return allTrips.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === m && d.getFullYear() === y;
+    });
+  }
+
+  // alias for readability — all rendering uses this month's trips
+  function getTrips() { return getCurrentMonthTrips(); }
+
+  function cost(km) { return (km / MILEAGE) * RATE; }
+
+  // get effective km (doubled if round trip)
+  function effectiveKm() {
+    const km = parseFloat(document.getElementById('kmInput').value) || 0;
+    return isRoundTrip ? km * 2 : km;
+  }
+
+  function toggleRoundTrip() {
+    isRoundTrip = !isRoundTrip;
+    document.getElementById('rtToggle').classList.toggle('active', isRoundTrip);
+    updatePreview();
+  }
+
+  function selectType(type) {
+    selectedType = type;
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-type="${type}"]`).classList.add('active');
+    // always set default km for the selected type
+    document.getElementById('kmInput').value = typeDefaults[type];
+    updatePreview();
+    updateLogBtn();
+  }
+
+  function updatePreview() {
+    const km = effectiveKm();
+    const c = cost(km);
+    const raw = parseFloat(document.getElementById('kmInput').value) || 0;
+    if (raw > 0 && isRoundTrip) {
+      document.getElementById('previewCost').textContent = `₹${c.toFixed(0)} (${km} km)`;
+    } else if (raw > 0) {
+      document.getElementById('previewCost').textContent = `₹${c.toFixed(0)}`;
+    } else {
+      document.getElementById('previewCost').textContent = '₹ —';
+    }
+    updateLogBtn();
+  }
+
+  function updateLogBtn() {
+    const btn = document.getElementById('logBtn');
+    const km = effectiveKm();
+    if (!selectedType) { btn.disabled = true; btn.textContent = 'Select trip type to log'; return; }
+    if (km <= 0) { btn.disabled = true; btn.textContent = 'Enter km to log'; return; }
+    btn.disabled = false;
+    btn.textContent = `Log ${selectedType} trip — ₹${cost(km).toFixed(0)}`;
+  }
+
+  function logTrip() {
+    const km = effectiveKm();
+    if (!selectedType || !km || km <= 0) return;
+    const note = document.getElementById('noteInput').value.trim();
+    const c = cost(km);
+    const trips = getTrips();
+    const spent = trips.reduce((s, t) => s + t.cost, 0);
+    if (spent + c > BUDGET) { showToast('Over budget — trip not logged', false); return; }
+    const trip = {
+      id: Date.now(),
+      type: selectedType,
+      km,
+      cost: c,
+      litres: km / MILEAGE,
+      note,
+      roundTrip: isRoundTrip,
+      date: new Date().toISOString()
+    };
+    allTrips.unshift(trip);
+    save();
+    document.getElementById('kmInput').value = '';
+    document.getElementById('noteInput').value = '';
+    document.getElementById('previewCost').textContent = '₹ —';
+    isRoundTrip = false;
+    document.getElementById('rtToggle').classList.remove('active');
+    updateLogBtn();
+    render();
+    showToast(`${typeEmoji[selectedType]} ${selectedType} trip logged — ₹${c.toFixed(0)}`, true);
+  }
+
+  function deleteTrip(id) {
+    allTrips = allTrips.filter(t => t.id !== id);
+    save(); render();
+  }
+
+  function clearAll() {
+    const trips = getTrips();
+    if (!trips.length) return;
+    if (confirm('Clear all trips this month?')) {
+      const tripIds = new Set(trips.map(t => t.id));
+      allTrips = allTrips.filter(t => !tripIds.has(t.id));
+      save(); render();
+    }
+  }
+
+  function setFilter(f, el) {
+    activeFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderList();
+  }
+
+  function save() { localStorage.setItem('petrol_trips', JSON.stringify(allTrips)); }
+
+  function fmt(n) { return n.toLocaleString('en-IN', { maximumFractionDigits: 2 }); }
+
+  function render() {
+    const trips = getTrips();
+    const spent = trips.reduce((s, t) => s + t.cost, 0);
+    const totalKm = trips.reduce((s, t) => s + t.km, 0);
+    const totalLitres = trips.reduce((s, t) => s + t.litres, 0);
+    const rem = BUDGET - spent;
+    const remKm = (rem / RATE) * MILEAGE;
+    const pct = Math.min((spent / BUDGET) * 100, 100);
+
+    document.getElementById('spent').textContent = fmt(spent);
+    document.getElementById('remaining').textContent = `₹${fmt(Math.max(rem, 0))}`;
+    document.getElementById('remainingKm').textContent = `≈ ${Math.max(remKm, 0).toFixed(0)} km left`;
+    document.getElementById('progressPct').textContent = `${pct.toFixed(1)}% used`;
+    document.getElementById('statTrips').textContent = trips.length;
+    document.getElementById('statKm').textContent = fmt(totalKm);
+    document.getElementById('statLitres').textContent = totalLitres.toFixed(1);
+    document.getElementById('statAvg').textContent = trips.length ? `₹${fmt(spent / trips.length)}` : '₹0';
+    document.querySelector('#statKm + .stat-sub').textContent = `of ~${Math.round((BUDGET / RATE) * MILEAGE)} km`;
+    document.querySelector('#statLitres + .stat-sub').textContent = `@ ${MILEAGE} kmpl`;
+
+    const fill = document.getElementById('progressFill');
+    fill.style.width = pct + '%';
+    fill.className = 'progress-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+    document.getElementById('remaining').style.color = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warning)' : 'var(--success)';
+
+    // breakdown
+    ['long','small','micro'].forEach(type => {
+      const tTrips = trips.filter(t => t.type === type);
+      const tCost = tTrips.reduce((s,t) => s + t.cost, 0);
+      const tKm = tTrips.reduce((s,t) => s + t.km, 0);
+      document.getElementById(`bc${type.charAt(0).toUpperCase()+type.slice(1)}Count`).textContent = tTrips.length;
+      document.getElementById(`bc${type.charAt(0).toUpperCase()+type.slice(1)}Cost`).textContent = `₹${fmt(tCost)}`;
+      document.getElementById(`bc${type.charAt(0).toUpperCase()+type.slice(1)}Km`).textContent = `${fmt(tKm)} km`;
+    });
+
+    renderList();
+    if (document.getElementById('tab-history').classList.contains('active')) renderMonthlyLogs();
+  }
+
+  function renderList() {
+    const trips = getTrips();
+    const filtered = activeFilter === 'all' ? trips : trips.filter(t => t.type === activeFilter);
+    const list = document.getElementById('logList');
+
+    if (!filtered.length) {
+      list.innerHTML = `<div class="log-empty"><div style="font-size:28px">⛽</div><p>${activeFilter === 'all' ? 'No trips logged yet.<br>Add your first trip on the left.' : `No ${activeFilter} trips logged.`}</p></div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(t => {
+      const d = new Date(t.date);
+      const dateStr = d.toLocaleDateString('en-IN', { day:'numeric', month:'short' }) + ' · ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true });
+      return `
+        <div class="trip-row">
+          <div class="trip-badge ${t.type}">${typeEmoji[t.type]}</div>
+          <div class="trip-info">
+            <div class="trip-info-top">
+              <span class="trip-type-label ${t.type}">${t.type.charAt(0).toUpperCase()+t.type.slice(1)} trip</span>
+              ${t.roundTrip ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--accent-dim);color:var(--accent);font-family:var(--mono)">↩ Round</span>' : ''}
+              <span class="trip-date">${dateStr}</span>
+            </div>
+            ${t.note ? `<div class="trip-note">${esc(t.note)}</div>` : ''}
+          </div>
+          <div class="trip-nums">
+            <div class="trip-cost">₹${fmt(t.cost)}</div>
+            <div class="trip-km">${t.km} km · ${t.litres.toFixed(2)}L</div>
+          </div>
+          <button class="trip-delete" onclick="deleteTrip(${t.id})" title="Delete">×</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function showToast(msg, success = true) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (success ? 'success' : 'danger');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // header month
+  document.getElementById('headerMonth').textContent = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+  // mileage setting
+  function showMileageEdit() {
+    document.getElementById('mileageBtn').style.display = 'none';
+    document.getElementById('mileageEdit').classList.add('active');
+    document.getElementById('mileageInput').value = MILEAGE;
+    document.getElementById('mileageInput').focus();
+  }
+
+  function saveMileage() {
+    const val = parseFloat(document.getElementById('mileageInput').value);
+    if (!val || val <= 0 || val > 50) { showToast('Enter a valid mileage (1–50 kmpl)', false); return; }
+    MILEAGE = val;
+    localStorage.setItem('petrol_mileage', MILEAGE);
+    document.getElementById('mileageDisplay').textContent = MILEAGE % 1 === 0 ? MILEAGE : MILEAGE.toFixed(1);
+    document.getElementById('mileageBtn').style.display = 'flex';
+    document.getElementById('mileageEdit').classList.remove('active');
+    updatePreview();
+    render();
+    showToast(`Mileage set to ${MILEAGE} kmpl`, true);
+  }
+
+  // handle Enter key in mileage input
+  document.getElementById('mileageInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') saveMileage();
+    if (e.key === 'Escape') {
+      document.getElementById('mileageBtn').style.display = 'flex';
+      document.getElementById('mileageEdit').classList.remove('active');
+    }
+  });
+
+  // init mileage display
+  document.getElementById('mileageDisplay').textContent = MILEAGE % 1 === 0 ? MILEAGE : MILEAGE.toFixed(1);
+
+  // ── TAB SWITCHING ──
+  function switchTab(tab, el) {
+    document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (tab === 'history') renderMonthlyLogs();
+    if (tab === 'fuel') renderFillUps();
+  }
+
+  // ── MONTHLY LOGS ──
+  function renderMonthlyLogs() {
+    const container = document.getElementById('monthlyLogs');
+    if (!allTrips.length) {
+      container.innerHTML = '<div class="no-history"><div style="font-size:28px">📅</div><p>No trip history yet.<br>Logs will appear here as you track trips.</p></div>';
+      return;
+    }
+
+    // group trips by year-month
+    const months = {};
+    allTrips.forEach(t => {
+      const d = new Date(t.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}`;
+      if (!months[key]) months[key] = { year: d.getFullYear(), month: d.getMonth(), trips: [] };
+      months[key].trips.push(t);
+    });
+
+    // sort keys descending (newest first)
+    const sortedKeys = Object.keys(months).sort((a, b) => b.localeCompare(a));
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    container.innerHTML = sortedKeys.map(key => {
+      const m = months[key];
+      const mTrips = m.trips;
+      const totalSpent = mTrips.reduce((s, t) => s + t.cost, 0);
+      const totalKm = mTrips.reduce((s, t) => s + t.km, 0);
+      const pct = Math.min((totalSpent / BUDGET) * 100, 100);
+
+      const longTrips = mTrips.filter(t => t.type === 'long');
+      const smallTrips = mTrips.filter(t => t.type === 'small');
+      const microTrips = mTrips.filter(t => t.type === 'micro');
+      const longCost = longTrips.reduce((s,t) => s + t.cost, 0);
+      const smallCost = smallTrips.reduce((s,t) => s + t.cost, 0);
+      const microCost = microTrips.reduce((s,t) => s + t.cost, 0);
+      const longKm = longTrips.reduce((s,t) => s + t.km, 0);
+      const smallKm = smallTrips.reduce((s,t) => s + t.km, 0);
+      const microKm = microTrips.reduce((s,t) => s + t.km, 0);
+
+      const pctColor = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warning)' : 'var(--accent)';
+      const spentColor = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warning)' : 'var(--text)';
+
+      const saved = BUDGET - totalSpent;
+      const savedClass = saved > 0 ? 'positive' : saved < 0 ? 'negative' : '';
+      const savedText = saved > 0 ? `Saved ₹${fmt(saved)}` : saved < 0 ? `Over by ₹${fmt(Math.abs(saved))}` : 'Exact budget';
+
+      const tripRows = mTrips.map(t => {
+        const d = new Date(t.date);
+        const dateStr = d.toLocaleDateString('en-IN', { day:'numeric', month:'short' }) + ' · ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+        return `<div class="month-trip-row">
+          <span class="mt-emoji">${typeEmoji[t.type]}</span>
+          <div class="mt-info">
+            <span class="mt-type ${t.type}">${t.type.charAt(0).toUpperCase()+t.type.slice(1)}${t.roundTrip ? ' ↩' : ''}</span>
+            <span class="mt-date">${dateStr}</span>
+            ${t.note ? `<div class="mt-note">${esc(t.note)}</div>` : ''}
+          </div>
+          <div style="text-align:right">
+            <div class="mt-cost">₹${fmt(t.cost)}</div>
+            <div class="mt-km">${t.km} km</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      return `<div class="month-card" id="mc-${key}">
+        <div class="month-header" onclick="toggleMonth('${key}')">
+          <div>
+            <div class="month-name">${monthNames[m.month]} ${m.year}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;font-family:var(--mono)">${mTrips.length} trip${mTrips.length !== 1 ? 's' : ''} · ${fmt(totalKm)} km</div>
+          </div>
+          <div class="month-summary">
+            <div class="month-stat">
+              <div class="month-stat-val" style="color:${spentColor}">₹${fmt(totalSpent)}</div>
+              <div class="month-stat-label">${pct.toFixed(0)}% of ₹${fmt(BUDGET)}</div>
+              <div class="month-saved ${savedClass}">${savedText}</div>
+            </div>
+            <span class="month-chevron">▼</span>
+          </div>
+        </div>
+        <div class="month-body">
+          <div class="month-pct-bar"><div class="month-pct-fill" style="width:${pct}%;background:${pctColor}"></div></div>
+          <div class="month-breakdown">
+            <div class="mb-cell">
+              <div class="mb-cell-icon">🛣️</div>
+              <div class="mb-cell-type">Long</div>
+              <div class="mb-cell-count" style="color:var(--accent)">${longTrips.length}</div>
+              <div class="mb-cell-cost">₹${fmt(longCost)}</div>
+              <div class="mb-cell-km">${fmt(longKm)} km</div>
+            </div>
+            <div class="mb-cell">
+              <div class="mb-cell-icon">🏘️</div>
+              <div class="mb-cell-type">Small</div>
+              <div class="mb-cell-count" style="color:var(--success)">${smallTrips.length}</div>
+              <div class="mb-cell-cost">₹${fmt(smallCost)}</div>
+              <div class="mb-cell-km">${fmt(smallKm)} km</div>
+            </div>
+            <div class="mb-cell">
+              <div class="mb-cell-icon">🛵</div>
+              <div class="mb-cell-type">Micro</div>
+              <div class="mb-cell-count" style="color:var(--warning)">${microTrips.length}</div>
+              <div class="mb-cell-cost">₹${fmt(microCost)}</div>
+              <div class="mb-cell-km">${fmt(microKm)} km</div>
+            </div>
+          </div>
+          <div class="month-trips">${tripRows}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleMonth(key) {
+    document.getElementById('mc-' + key).classList.toggle('open');
+  }
+
+  // ── FUEL FILL-UP TRACKER ──
+  let fillUps = JSON.parse(localStorage.getItem('petrol_fillups') || '[]');
+
+  function saveFillUps() { localStorage.setItem('petrol_fillups', JSON.stringify(fillUps)); }
+
+  function logFillUp() {
+    const odo = parseFloat(document.getElementById('odoInput').value);
+    const litres = parseFloat(document.getElementById('litresInput').value);
+    const amount = parseFloat(document.getElementById('amountInput').value);
+
+    if (!odo || odo <= 0) { showToast('Enter a valid odometer reading', false); return; }
+    if (!litres || litres <= 0) { showToast('Enter litres filled', false); return; }
+    if (!amount || amount <= 0) { showToast('Enter amount paid', false); return; }
+
+    // check odometer is higher than last entry
+    const sorted = [...fillUps].sort((a, b) => a.odometer - b.odometer);
+    if (sorted.length && odo <= sorted[sorted.length - 1].odometer) {
+      showToast('Odometer must be higher than last reading (' + fmt(sorted[sorted.length - 1].odometer) + ' km)', false);
+      return;
+    }
+
+    fillUps.push({
+      id: Date.now(),
+      odometer: odo,
+      litres,
+      amount,
+      date: new Date().toISOString()
+    });
+
+    saveFillUps();
+    document.getElementById('odoInput').value = '';
+    document.getElementById('litresInput').value = '';
+    document.getElementById('amountInput').value = '';
+    renderFillUps();
+    showToast(`Fill-up logged — ${litres}L at ${fmt(odo)} km`, true);
+  }
+
+  function deleteFillUp(id) {
+    fillUps = fillUps.filter(f => f.id !== id);
+    saveFillUps();
+    renderFillUps();
+  }
+
+  function clearFillUps() {
+    if (!fillUps.length) return;
+    if (confirm('Clear all fill-up history?')) {
+      fillUps = [];
+      saveFillUps();
+      renderFillUps();
+    }
+  }
+
+  function getCalculatedMileage() {
+    // sort by odometer ascending
+    const sorted = [...fillUps].sort((a, b) => a.odometer - b.odometer);
+    if (sorted.length < 2) return null;
+
+    // calculate mileage for each interval
+    const intervals = [];
+    for (let i = 1; i < sorted.length; i++) {
+      const dist = sorted[i].odometer - sorted[i - 1].odometer;
+      const litres = sorted[i].litres;
+      if (dist > 0 && litres > 0) {
+        intervals.push({ kmpl: dist / litres, dist, litres });
+      }
+    }
+    if (!intervals.length) return null;
+
+    const avgKmpl = intervals.reduce((s, i) => s + i.kmpl, 0) / intervals.length;
+    const totalDist = intervals.reduce((s, i) => s + i.dist, 0);
+    const totalLitres = intervals.reduce((s, i) => s + i.litres, 0);
+    const overallKmpl = totalDist / totalLitres;
+
+    return {
+      average: Math.round(avgKmpl * 10) / 10,
+      overall: Math.round(overallKmpl * 10) / 10,
+      intervals,
+      dataPoints: sorted.length
+    };
+  }
+
+  function renderFillUps() {
+    const list = document.getElementById('fillUpList');
+    const sorted = [...fillUps].sort((a, b) => b.odometer - a.odometer);
+
+    // mileage result card
+    const calc = getCalculatedMileage();
+    const resultCard = document.getElementById('mileageResult');
+    const refSpan = document.getElementById('currentMileageRef');
+
+    if (calc) {
+      resultCard.style.display = 'block';
+      document.getElementById('calcMileage').textContent = calc.overall + ' kmpl';
+      document.getElementById('calcMileageSub').textContent =
+        `Based on ${calc.dataPoints} fill-ups · ${calc.intervals.length} interval${calc.intervals.length !== 1 ? 's' : ''}`;
+      refSpan.textContent = MILEAGE;
+    } else {
+      resultCard.style.display = 'none';
+    }
+
+    if (!sorted.length) {
+      list.innerHTML = '<div class="log-empty"><div style="font-size:28px">⛽</div><p>No fill-ups logged yet.<br>Log your first fill-up to start tracking real mileage.</p></div>';
+      return;
+    }
+
+    // build interval mileages map (keyed by fill-up id)
+    const ascSorted = [...fillUps].sort((a, b) => a.odometer - b.odometer);
+    const mileageMap = {};
+    for (let i = 0; i < ascSorted.length; i++) {
+      if (i === 0) {
+        mileageMap[ascSorted[i].id] = null; // first fill-up, no mileage
+      } else {
+        const dist = ascSorted[i].odometer - ascSorted[i - 1].odometer;
+        const litres = ascSorted[i].litres;
+        mileageMap[ascSorted[i].id] = dist > 0 && litres > 0 ? Math.round((dist / litres) * 10) / 10 : null;
+      }
+    }
+
+    list.innerHTML = sorted.map((f, idx) => {
+      const d = new Date(f.date);
+      const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const num = sorted.length - idx;
+      const kmpl = mileageMap[f.id];
+      let mileageBadge = '';
+      if (kmpl !== null) {
+        const cls = kmpl >= 10 ? 'good' : kmpl >= 6 ? 'ok' : 'bad';
+        mileageBadge = `<span class="fill-mileage ${cls}">${kmpl} kmpl</span>`;
+      } else {
+        mileageBadge = '<span class="fill-mileage na">Baseline</span>';
+      }
+
+      return `<div class="fill-row">
+        <div class="fill-num">${num}</div>
+        <div class="fill-info">
+          <div class="fill-odo">${fmt(f.odometer)} km</div>
+          <div class="fill-date">${dateStr}</div>
+        </div>
+        <div class="fill-stats">
+          <div class="fill-litres">${f.litres} L</div>
+          <div class="fill-amount">₹${fmt(f.amount)}</div>
+        </div>
+        ${mileageBadge}
+        <button class="fill-delete" onclick="deleteFillUp(${f.id})" title="Delete">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  function useCalculatedMileage() {
+    const calc = getCalculatedMileage();
+    if (!calc) return;
+    MILEAGE = calc.overall;
+    localStorage.setItem('petrol_mileage', MILEAGE);
+    document.getElementById('mileageDisplay').textContent = MILEAGE % 1 === 0 ? MILEAGE : MILEAGE.toFixed(1);
+    updatePreview();
+    render();
+    renderFillUps();
+    showToast(`Mileage updated to ${MILEAGE} kmpl from real data`, true);
+  }
+
+  render();
+</script>
+</body>
+</html>
